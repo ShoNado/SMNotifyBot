@@ -2,6 +2,7 @@ package main
 
 import (
 	api "SMNotifyBot/internal/handleAPI"
+	handleMSG "SMNotifyBot/internal/handleUpdate"
 	"bufio"
 	"context"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -46,11 +47,7 @@ func receiveUpdates(ctx context.Context, updates tgbotapi.UpdatesChannel) {
 			return
 		// receive update from channel and then handle it
 		case update := <-updates:
-			handleUpdate(update)
+			handleMSG.HandleUpdate(update)
 		}
 	}
-}
-
-func handleUpdate(update tgbotapi.Update) {
-
 }
