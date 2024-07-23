@@ -12,12 +12,12 @@ var bot, _ = tgbotapi.NewBotAPI(api.GetApiToken())
 
 func HandleCommand(message *tgbotapi.Message) {
 	msg := tgbotapi.NewMessage(message.From.ID, "")
+	if !handleDB.IsUserInDb(message.From.ID) {
+		handleDB.AddNewUser(message.From)
+	}
 	switch {
 	case message.Command() == "start":
 		msg = answerCreator.StartTextSint(msg)
-		if !handleDB.IsUserInDb(message.From.ID) {
-			handleDB.AddNewUser(message.From)
-		}
 	case message.Command() == "info":
 		msg.Text = "Данный бот сохраняет сообщения которые вы ему пересылаете, а затем уведомляет о них, в заданное время. " +
 			"Для навигации используйте встроенные кнопки под сообщениями."
@@ -28,11 +28,10 @@ func HandleCommand(message *tgbotapi.Message) {
 		)
 
 	case message.Command() == "settime":
-		msg = answerCreator.TimeMsgSint(msg)
+		msg, _ = answerCreator.TimeMsgSint(msg, message.From)
 
 	case message.Command() == "checkall":
-
-		if handleDB.IsUserInDb(message.From.ID) || handleDB.IsUserHaveMsg(message.From.ID) {
+		if handleDB.NumOfMsgSaved(message.From.ID) > 0 {
 			answerCreator.UserSavedMsgs(message.From.ID, msg)
 			return
 		} else {

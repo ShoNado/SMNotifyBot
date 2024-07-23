@@ -12,20 +12,26 @@ var bot, _ = tgbotapi.NewBotAPI(api.GetApiToken())
 
 func HandleMessage(message *tgbotapi.Message) {
 	msg := tgbotapi.NewMessage(message.From.ID, "")
-	switch {
-	case !handleDB.IsUserInDb(message.From.ID) && message.Text != "":
+	if !handleDB.IsUserInDb(message.From.ID) {
 		handleDB.AddNewUser(message.From)
-		err := handleDB.AddMsg(message.From.ID, message.Text)
-		if err != nil {
-			msg.Text = "Произошла ошибка при добавлении сообщения в базу данных"
-		} else {
-			msg.Text = "Сообщение успешно сохранено"
-		}
-		break
-
+	}
+	switch {
 	case handleDB.IsUserInDb(message.From.ID) && message.Text != "":
 		if handleDB.NumOfMsgSaved(message.From.ID) < 35 {
-			saveMsg := fmt.Sprintf(message.From.FirstName + " \n@" + message.From.UserName + "\n" + message.Time().Format("02-01-2006 15:04:05") + "\n" + message.Text)
+			var saveMsg string
+			if message.ForwardFrom != nil {
+				if message.ForwardFrom.UserName != "" {
+					saveMsg = fmt.Sprintf(message.ForwardFrom.FirstName+" "+message.ForwardFrom.LastName+
+						" \n<a href=\"t.me/%v\">Перейти в чат</a>\n"+message.Time().Format("02-01-2006 15:04")+"\n\n<blockquote>"+message.Text+"</blockquote>", message.ForwardFrom.UserName)
+
+				} else {
+					saveMsg = fmt.Sprintf(message.ForwardFrom.FirstName+" "+message.ForwardFrom.LastName+
+						" \n<a href=\"tg://user?id=%v\">Открыть профиль</a>"+"\n"+message.Time().Format("02-01-2006 15:04")+"\n\n<blockquote>"+message.Text+"</blockquote>", message.ForwardFrom.ID)
+				}
+
+			} else {
+				saveMsg = fmt.Sprintf(message.From.FirstName + "\n" + message.Time().Format("02-01-2006 15:04") + "\n\n<blockquote>" + message.Text + "</blockquote>")
+			}
 			err := handleDB.AddMsg(message.From.ID, saveMsg)
 			if err != nil {
 				msg.Text = "Произошла ошибка при добавлении сообщения в базу данных"
