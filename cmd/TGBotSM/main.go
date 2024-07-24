@@ -3,6 +3,7 @@ package main
 import (
 	api "SMNotifyBot/internal/handleAPI"
 	handleMSG "SMNotifyBot/internal/handleUpdate"
+	"SMNotifyBot/internal/timeManage"
 	"bufio"
 	"context"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -29,6 +30,8 @@ func main() {
 	updates := bot.GetUpdatesChan(u)
 
 	go receiveUpdates(ctx, updates)
+
+	go timeManage.WaitForTime()
 
 	// Wait for a newline symbol, then cancel handling updates
 	_, err = bufio.NewReader(os.Stdin).ReadBytes('\n')
