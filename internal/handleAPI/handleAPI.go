@@ -16,7 +16,7 @@ func GetApiToken() string { //read token from file
 	configuration := Config{}
 	err := decoder.Decode(&configuration)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("Не удалось подключиться к боту ", err)
 	}
 	return configuration.TelegramBotToken
 }

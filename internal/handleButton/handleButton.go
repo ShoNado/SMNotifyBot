@@ -25,6 +25,9 @@ func HandleButton(query *tgbotapi.CallbackQuery) {
 	case query.Data == "checkAll":
 		if handleDB.NumOfMsgSaved(query.From.ID) > 0 {
 			answerCreator.UserSavedMsgs(query.From.ID, msg)
+			if _, err := bot.Request(callback); err != nil {
+				log.Println("Не удалось ответить на колбек кнопки", err)
+			}
 			return
 		} else {
 			msg.Text = "В данный момент у вас нет сохраненных сообщений"
@@ -38,15 +41,15 @@ func HandleButton(query *tgbotapi.CallbackQuery) {
 		if err != nil {
 			msg.Text = "Что-то пошло не так при удалении"
 		}
+		deleteMsg := tgbotapi.NewDeleteMessage(query.Message.Chat.ID, query.Message.MessageID)
+		if _, err := bot.Request(deleteMsg); err != nil {
+			log.Println(err)
+		}
 		if handleDB.DeleteMSG(query.From.ID, deleteId) {
-			msg.Text = "Сообщение успешно удалено"
 			callback = tgbotapi.NewCallback(query.ID, "Сообщение успешно удалено")
-			deleteMsg := tgbotapi.NewDeleteMessage(query.Message.Chat.ID, query.Message.MessageID)
-			if _, err := bot.Request(deleteMsg); err != nil {
-				log.Println(err)
-			}
+			return
 		} else {
-			msg.Text = "Что-то пошло не так при удалении"
+			msg.Text = "Данное сообщение уже удалено из списка напоминаний"
 		}
 
 	case strings.HasPrefix(query.Data, "time"):
@@ -85,10 +88,10 @@ func HandleButton(query *tgbotapi.CallbackQuery) {
 		msg.Text = "где ты эту кнопку нашел??"
 	}
 	if _, err := bot.Request(callback); err != nil {
-		log.Println(err)
+		log.Println("Не удалось ответить на колбек кнопки", err)
 	}
 	if _, err := bot.Send(msg); err != nil {
-		log.Printf("Не удалось ответить на команду")
+		log.Println("Не удалось ответить на кнопку", err)
 	}
 
 }

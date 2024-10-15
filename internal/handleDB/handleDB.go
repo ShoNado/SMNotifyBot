@@ -32,7 +32,6 @@ func connectDB() {
 	cfg := mysql.Config{
 		User:   "evgenu",
 		Passwd: getDataForDB().Password,
-		Net:    "tcp",
 		Addr:   getDataForDB().IP,
 		DBName: "SMproj",
 	}
@@ -68,7 +67,7 @@ func IsUserInDb(TgID int64) bool {
 	row := db.QueryRow("SELECT id FROM users WHERE tgId = ?", TgID)
 	var id int
 	if err := row.Scan(&id); err != nil {
-		log.Println("нет такого юзера: ", err)
+		log.Println("Новый юзер: ", err, " , иницирую добавление в ДБ")
 		return false
 	}
 	if id != 0 {
@@ -77,19 +76,6 @@ func IsUserInDb(TgID int64) bool {
 	return false
 }
 
-func IsUserHaveMsg(TgID int64) bool {
-	connectDB()
-	row := db.QueryRow("SELECT MsgSaved FROM users WHERE tgId = ?", TgID)
-	var msgCount int
-	if err := row.Scan(&msgCount); err != nil {
-		log.Println(err)
-		return false
-	}
-	if msgCount > 0 {
-		return true
-	}
-	return false
-}
 func GetUserData(TgID int64) UserProfile {
 	connectDB()
 	row := db.QueryRow("SELECT * FROM users WHERE tgId = ?", TgID)
@@ -103,8 +89,6 @@ func GetUserData(TgID int64) UserProfile {
 		&user.Msg[13], &user.Msg[14], &user.Msg[15], &user.Msg[16], &user.Msg[17], &user.Msg[18], &user.Msg[19], &user.Msg[20],
 		&user.Msg[21], &user.Msg[22], &user.Msg[23], &user.Msg[24], &user.Msg[25], &user.Msg[26], &user.Msg[27], &user.Msg[28],
 		&user.Msg[29], &user.Msg[30], &user.Msg[31], &user.Msg[32], &user.Msg[33], &user.Msg[34]); err != nil {
-		//log.Println(err)
-
 	}
 	return user
 }
@@ -151,7 +135,6 @@ func AddMsg(TgID int64, text string) error {
 		return err2
 	}
 	return nil
-
 }
 
 func DeleteMSG(TgID int64, deleteID int) bool {
@@ -235,4 +218,24 @@ func DeleteTime(TgID int64, time string) bool {
 		return false
 	}
 	return true
+}
+
+func GetIdsByHour(hour int) []int64 {
+	connectDB()
+	var usersID []int64
+	query := ""
+	if hour > 0 && hour < 24 {
+		query = "SELECT tgId FROM users WHERE time" + strconv.Itoa(hour) + " = ?"
+	} else {
+		query = "SELECT tgId FROM users WHERE time24 = ?"
+	}
+	tgIDData, _ := db.Query(query, true)
+	for tgIDData.Next() {
+		var tgID int64
+		if err := tgIDData.Scan(&tgID); err != nil {
+			return nil
+		}
+		usersID = append(usersID, tgID)
+	}
+	return usersID
 }

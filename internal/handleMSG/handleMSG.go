@@ -2,6 +2,7 @@ package handleMSG
 
 import (
 	api "SMNotifyBot/internal/handleAPI"
+	"SMNotifyBot/internal/handleCommand"
 	"SMNotifyBot/internal/handleDB"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -11,6 +12,10 @@ import (
 var bot, _ = tgbotapi.NewBotAPI(api.GetApiToken())
 
 func HandleMessage(message *tgbotapi.Message) {
+	if message.IsCommand() {
+		handleCommand.HandleCommand(message)
+		return
+	}
 	msg := tgbotapi.NewMessage(message.From.ID, "")
 	if !handleDB.IsUserInDb(message.From.ID) {
 		handleDB.AddNewUser(message.From)
@@ -22,15 +27,13 @@ func HandleMessage(message *tgbotapi.Message) {
 			if message.ForwardFrom != nil {
 				if message.ForwardFrom.UserName != "" {
 					saveMsg = fmt.Sprintf(message.ForwardFrom.FirstName+" "+message.ForwardFrom.LastName+
-						" \n<a href=\"t.me/%v\">Перейти в чат</a>\n"+message.Time().Format("02-01-2006 15:04")+"\n\n<blockquote>"+message.Text+"</blockquote>", message.ForwardFrom.UserName)
-
+						" \n<a href=\"t.me/%v\">Перейти в чат</a>\n"+"\n\n<blockquote>"+message.Text+"</blockquote>", message.ForwardFrom.UserName)
 				} else {
 					saveMsg = fmt.Sprintf(message.ForwardFrom.FirstName+" "+message.ForwardFrom.LastName+
-						" \n<a href=\"tg://user?id=%v\">Открыть профиль</a>"+"\n"+message.Time().Format("02-01-2006 15:04")+"\n\n<blockquote>"+message.Text+"</blockquote>", message.ForwardFrom.ID)
+						" \n<a href=\"tg://user?id=%v\">Открыть профиль</a>"+"\n"+"\n\n<blockquote>"+message.Text+"</blockquote>", message.ForwardFrom.ID)
 				}
-
 			} else {
-				saveMsg = fmt.Sprintf(message.From.FirstName + "\n" + message.Time().Format("02-01-2006 15:04") + "\n\n<blockquote>" + message.Text + "</blockquote>")
+				saveMsg = fmt.Sprintf(message.From.FirstName + "\n" + "\n\n<blockquote>" + message.Text + "</blockquote>")
 			}
 			err := handleDB.AddMsg(message.From.ID, saveMsg)
 			if err != nil {
@@ -43,14 +46,11 @@ func HandleMessage(message *tgbotapi.Message) {
 		}
 		break
 
-	case message.Text != "":
-
 	default:
 		msg.Text = "Данный формат не поддерживается"
 	}
 
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("Не удалось ответить на команду")
-		panic(err)
 	}
 }

@@ -95,8 +95,7 @@ func UserSavedMsgs(TgId int64, msg tgbotapi.MessageConfig) {
 			msg.DisableWebPagePreview = true
 			msg.ParseMode = "HTML"
 			if _, err := bot.Send(msg); err != nil {
-				log.Printf("Не удалось ответить на команду")
-				panic(err)
+				log.Printf("Не удалось вызвать список сообщений")
 			}
 		}
 
