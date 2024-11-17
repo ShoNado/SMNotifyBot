@@ -3,8 +3,8 @@ package handleDB
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/go-sql-driver/mysql"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
 	"strconv"
@@ -29,25 +29,34 @@ type UserProfile struct {
 }
 
 func connectDB() {
-	cfg := mysql.Config{
-		User:   "evgenu",
-		Passwd: getDataForDB().Password,
-		Addr:   getDataForDB().IP,
-		DBName: "SMproj",
+	db, err := sql.Open("sqlite3", "data.db")
+	if err != nil {
+		panic(err)
 	}
-	// Get a database handle.
-	var err error
-	db, err = sql.Open("mysql", cfg.FormatDSN())
+	defer db.Close()
 
 	db.SetConnMaxLifetime(time.Second * 3)
 	db.SetMaxOpenConns(1000)
-	if err != nil {
-		log.Println(err)
-	}
 
 	pingErr := db.Ping()
 	if pingErr != nil {
 		log.Println(pingErr)
+	}
+}
+
+func CreateDB() {
+	connectDB()
+
+	filePath := "config/userDB.sql"
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Fatalf("Ошибка при чтении файла: %v", err)
+	}
+	query := string(data)
+
+	_, err = db.Exec(query) //
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -67,7 +76,7 @@ func IsUserInDb(TgID int64) bool {
 	row := db.QueryRow("SELECT id FROM users WHERE tgId = ?", TgID)
 	var id int
 	if err := row.Scan(&id); err != nil {
-		log.Println("Новый юзер: ", err, " , иницирую добавление в ДБ")
+		log.Println("Новый юзер: ", err, " , инициирую добавление в ДБ")
 		return false
 	}
 	if id != 0 {
