@@ -3,6 +3,7 @@ package handleDB
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
@@ -33,7 +34,13 @@ func connectDB() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+
+		}
+	}(db)
 
 	db.SetConnMaxLifetime(time.Second * 3)
 	db.SetMaxOpenConns(1000)
@@ -53,11 +60,11 @@ func CreateDB() {
 		log.Fatalf("Ошибка при чтении файла: %v", err)
 	}
 	query := string(data)
-
-	_, err = db.Exec(query) //
-	if err != nil {
-		panic(err)
-	}
+	fmt.Println(query)
+	//_, err = db.Exec(query) //
+	//if err != nil {
+	//	panic(err)
+	//}
 }
 
 func getDataForDB() Pass { //read password from file
@@ -103,7 +110,8 @@ func GetUserData(TgID int64) UserProfile {
 }
 func AddNewUser(user *tgbotapi.User) {
 	connectDB()
-	_, err := db.Exec("INSERT INTO users (tgId,nameFromTg,userName,timesChosen,msgSaved) VALUES (?,?,?,?,?)",
+	//goland:noinspection ALL
+	_, err := db.Exec("INSERT INTO users (users.tgId,users.nameFromTg,users.userName,users.timesChosen,users.msgSaved) VALUES (?,?,?,?,?)",
 		user.ID, user.FirstName+user.LastName, user.UserName, 0, 0)
 	if err != nil {
 		log.Println("addNewUser: ", err)
@@ -131,8 +139,7 @@ func AddMsg(TgID int64, text string) error {
 	}
 	memorySell := "msg" + strconv.Itoa(empty)
 	connectDB()
-	query := "UPDATE users SET " + memorySell + " = '" + text + "' WHERE tgId = " + "?"
-	_, err1 := db.Exec(query, TgID)
+	_, err1 := db.Exec("UPDATE users SET ?  = ? WHERE tgId = ?", memorySell, text, TgID)
 	num := NumOfMsgSaved(TgID) + 1
 	_, err2 := db.Exec("UPDATE users SET msgSaved  = ? WHERE tgId = ?", num, TgID)
 	if err1 != nil {
@@ -158,8 +165,7 @@ func DeleteMSG(TgID int64, deleteID int) bool {
 	if msgData == "" || msgData == "empty" {
 		return false
 	} else {
-		query := "UPDATE users SET " + memorySell + " = 'empty' WHERE tgId = " + "?"
-		_, err := db.Exec(query, TgID)
+		_, err := db.Exec("UPDATE users SET  ?  = 'empty' WHERE tgId = ?", memorySell, TgID)
 		if err != nil {
 			log.Println(err)
 			return false
@@ -186,8 +192,8 @@ func NumTimes(TgID int64) int {
 
 func Addtime(TgID int64, time string) bool {
 	connectDB()
-	query := "UPDATE users SET " + time + " = 1 WHERE tgId = " + "?"
-	_, err := db.Exec(query, TgID)
+
+	_, err := db.Exec("UPDATE users SET  ? = 1 WHERE tgId = ?", time, TgID)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -214,8 +220,7 @@ func IsTimeTaken(TgID int64, time string) bool {
 
 func DeleteTime(TgID int64, time string) bool {
 	connectDB()
-	query := "UPDATE users SET " + time + " = 0 WHERE tgId = " + "?"
-	_, err := db.Exec(query, TgID)
+	_, err := db.Exec("UPDATE users SET ?  = 0 WHERE tgId = ?", time, TgID)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -234,7 +239,7 @@ func GetIdsByHour(hour int) []int64 {
 	var usersID []int64
 	query := ""
 	if hour > 0 && hour < 24 {
-		query = "SELECT tgId FROM users WHERE time" + strconv.Itoa(hour) + " = ?"
+		query = "SELECT tgId FROM users WHERE " + "time" + strconv.Itoa(hour) + " = ?"
 	} else {
 		query = "SELECT tgId FROM users WHERE time24 = ?"
 	}
