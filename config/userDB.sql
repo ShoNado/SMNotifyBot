@@ -1,6 +1,5 @@
-
 CREATE TABLE IF NOT EXISTS users(
-                      id             INTEGER AUTO_INCREMENT NOT NULL PRIMARY KEY,
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
                       tgId           BIGINT,
                       nameFromTg     VARCHAR(255) DEFAULT '',
                       userName       VARCHAR(255) DEFAULT '',
@@ -65,6 +64,4 @@ CREATE TABLE IF NOT EXISTS users(
                       msg33          TEXT(50000),
                       msg34          TEXT(50000),
                       msg35          TEXT(50000)
-
-
 );

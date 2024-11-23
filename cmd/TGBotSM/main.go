@@ -2,6 +2,7 @@ package main
 
 import (
 	api "SMNotifyBot/internal/handleAPI"
+	"SMNotifyBot/internal/handleDB"
 	handleMSG "SMNotifyBot/internal/handleUpdate"
 	"SMNotifyBot/internal/timeManage"
 	"bufio"
@@ -22,7 +23,7 @@ func main() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	//handleDB.CreateDB()
+	handleDB.CreateTabelForData()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
