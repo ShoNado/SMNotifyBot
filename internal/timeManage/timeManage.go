@@ -18,7 +18,7 @@ func WaitForTime() {
 	for {
 		//проверка на то пора ли делать уведомление
 		time.Sleep(10 * time.Second)
-		if time.Now().Minute() == 40 {
+		if time.Now().Minute() == 0 {
 			callForNotification(time.Now().Hour())
 			time.Sleep(60 * time.Second)
 		}

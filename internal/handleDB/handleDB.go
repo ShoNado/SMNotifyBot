@@ -70,7 +70,11 @@ func IsUserInDb(TgID int64) bool {
 	row := db.QueryRow("SELECT id FROM users WHERE tgId = ?", TgID)
 	var id int
 	if err := row.Scan(&id); err != nil {
-		loger.LogToFile("Новый юзер, так как: " + fmt.Sprintln(err) + " , инициирую добавление в ДБ")
+		if fmt.Sprint(err) == "no such table: users " {
+			loger.LogToFile(" Ошибка: Пропала таблица для данных, создаю заново")
+			CreateTabelForData()
+		}
+		loger.LogToFile("Новый юзер, так как: " + fmt.Sprint(err) + " , инициирую добавление в ДБ")
 		return false
 	}
 	if id != 0 {
