@@ -4,8 +4,9 @@ import (
 	"SMNotifyBot/internal/answerCreator"
 	api "SMNotifyBot/internal/handleAPI"
 	"SMNotifyBot/internal/handleDB"
+	"SMNotifyBot/internal/loger"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
 )
 
 var bot, _ = tgbotapi.NewBotAPI(api.GetApiToken())
@@ -43,7 +44,7 @@ func HandleCommand(message *tgbotapi.Message) {
 	}
 
 	if _, err := bot.Send(msg); err != nil {
-		log.Printf("Не удалось ответить на команду")
+		loger.LogToFile("Ошибка: Не удалось ответить на команду в handleCommand" + fmt.Sprintln(err))
 	}
 
 }

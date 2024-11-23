@@ -1,14 +1,12 @@
 package handleUpdate
 
 import (
-	api "SMNotifyBot/internal/handleAPI"
 	"SMNotifyBot/internal/handleButton"
 	"SMNotifyBot/internal/handleMSG"
+	"SMNotifyBot/internal/loger"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
-
-var bot, _ = tgbotapi.NewBotAPI(api.GetApiToken())
 
 func HandleUpdate(update tgbotapi.Update) {
 	switch {
@@ -23,6 +21,6 @@ func HandleUpdate(update tgbotapi.Update) {
 
 	// If something goes wrong
 	default:
-		fmt.Println("Что-то пошло не так при использовании бота")
+		loger.LogToFile("Ошибка: При обработке update в handleUpdate произошла ошибка. Содержание update: " + fmt.Sprintln(update))
 	}
 }

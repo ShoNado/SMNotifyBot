@@ -3,9 +3,9 @@ package answerCreator
 import (
 	api "SMNotifyBot/internal/handleAPI"
 	"SMNotifyBot/internal/handleDB"
+	"SMNotifyBot/internal/loger"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
 	"strconv"
 )
 
@@ -95,7 +95,7 @@ func UserSavedMsgs(TgId int64, msg tgbotapi.MessageConfig) {
 			msg.DisableWebPagePreview = true
 			msg.ParseMode = "HTML"
 			if _, err := bot.Send(msg); err != nil {
-				log.Printf("Не удалось вызвать список сообщений")
+				loger.LogToFile("Ошибка: Не удалось вызвать список сообщений")
 			}
 		}
 

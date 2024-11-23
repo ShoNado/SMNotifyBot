@@ -1,12 +1,11 @@
 package handleDB
 
 import (
+	"SMNotifyBot/internal/loger"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
 	"os"
 	"strconv"
 )
@@ -32,6 +31,7 @@ func connectDB() *sql.DB {
 
 	db, err := sql.Open("sqlite3", "config/userDB.db")
 	if err != nil {
+		loger.LogToFile("Критическая ошибка: Не удалось подключиться к базе данных")
 		panic(err)
 	}
 
@@ -41,6 +41,7 @@ func connectDB() *sql.DB {
 func disconnectDB(db *sql.DB) {
 	err := db.Close()
 	if err != nil {
+		loger.LogToFile("Критическая ошибка: Не удалось отключиться от базы данных")
 		panic(err)
 	}
 }
@@ -51,27 +52,16 @@ func CreateTabelForData() {
 	filePath := "config/userDB.sql"
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Fatalf("Ошибка при чтении файла: %v", err)
+		loger.LogToFile("Ошибка: Не удалось считать файл конфигурации " + fmt.Sprintln(err))
 	}
+
 	query := string(data)
 
 	_, err = db.Exec(query) //
 	if err != nil {
+		loger.LogToFile("Ошибка: Не удалось создать таблицу для хранения данных " + fmt.Sprintln(err))
 		panic(err)
-	} else {
-		fmt.Println("Создана табличка, так как программа запущена в новом окружении")
 	}
-}
-
-func getDataForDB() Pass { //read password from file
-	file, _ := os.Open("config/configDB.json")
-	decoder := json.NewDecoder(file)
-	configuration := Pass{}
-	err := decoder.Decode(&configuration)
-	if err != nil {
-		log.Println(err)
-	}
-	return configuration
 }
 
 func IsUserInDb(TgID int64) bool {
@@ -80,7 +70,7 @@ func IsUserInDb(TgID int64) bool {
 	row := db.QueryRow("SELECT id FROM users WHERE tgId = ?", TgID)
 	var id int
 	if err := row.Scan(&id); err != nil {
-		log.Println("Новый юзер, так как: ", err, " , инициирую добавление в ДБ")
+		loger.LogToFile("Новый юзер, так как: " + fmt.Sprintln(err) + " , инициирую добавление в ДБ")
 		return false
 	}
 	if id != 0 {
@@ -114,7 +104,7 @@ func AddNewUser(user *tgbotapi.User) {
 	_, err := db.Exec("INSERT INTO users (tgId, nameFromTg, userName, timesChosen, msgSaved) VALUES (?,?,?,?,?)",
 		user.ID, user.FirstName+user.LastName, user.UserName, 0, 0)
 	if err != nil {
-		log.Println("addNewUser: ", err)
+		loger.LogToFile("addNewUser: " + fmt.Sprintln(err))
 	}
 }
 
@@ -124,7 +114,7 @@ func NumOfMsgSaved(TgID int64) int {
 	row := db.QueryRow("SELECT MsgSaved FROM users WHERE tgId = ?", TgID)
 	var msgCount int
 	if err := row.Scan(&msgCount); err != nil {
-		log.Println(err)
+		loger.LogToFile(err)
 	}
 	return msgCount
 }
@@ -147,11 +137,11 @@ func AddMsg(TgID int64, text string) error {
 	num := NumOfMsgSaved(TgID) + 1
 	_, err2 := db.Exec("UPDATE users SET msgSaved  = ? WHERE tgId = ?", num, TgID)
 	if err1 != nil {
-		log.Println(err1)
+		loger.LogToFile(err1)
 		return err1
 	}
 	if err2 != nil {
-		log.Println(err2)
+		loger.LogToFile(err2)
 		return err2
 	}
 	return nil
@@ -165,7 +155,7 @@ func DeleteMSG(TgID int64, deleteID int) bool {
 	row := db.QueryRow(query, TgID)
 	var msgData string
 	if err := row.Scan(&msgData); err != nil {
-		log.Println(err)
+		loger.LogToFile(err)
 	}
 	if msgData == "" || msgData == "empty" {
 		return false
@@ -173,13 +163,13 @@ func DeleteMSG(TgID int64, deleteID int) bool {
 		query := "UPDATE " + " users SET  " + memorySell + "  = 'empty' WHERE tgId = ?"
 		_, err := db.Exec(query, TgID)
 		if err != nil {
-			log.Println(err)
+			loger.LogToFile(err)
 			return false
 		}
 		num := NumOfMsgSaved(TgID) - 1
 		_, err = db.Exec("UPDATE users SET msgSaved  = ? WHERE tgId = ?", num, TgID)
 		if err != nil {
-			log.Println(err)
+			loger.LogToFile(err)
 			return false
 		}
 		return true
@@ -192,7 +182,7 @@ func NumTimes(TgID int64) int {
 	row := db.QueryRow("SELECT timesChosen FROM users WHERE tgId = ?", TgID)
 	var timeCount int
 	if err := row.Scan(&timeCount); err != nil {
-		log.Println(err)
+		loger.LogToFile(err)
 	}
 	return timeCount
 }
@@ -203,13 +193,13 @@ func Addtime(TgID int64, time string) bool {
 	query := "UPDATE" + " users SET " + time + " = 1 WHERE tgId = ?"
 	_, err := db.Exec(query, TgID)
 	if err != nil {
-		log.Println(err)
+		loger.LogToFile(err)
 		return false
 	}
 	num := NumTimes(TgID) + 1
 	_, err = db.Exec("UPDATE users SET timesChosen  = ? WHERE tgId = ?", num, TgID)
 	if err != nil {
-		log.Println(err)
+		loger.LogToFile(err)
 		return false
 	}
 	return true
@@ -222,7 +212,7 @@ func IsTimeTaken(TgID int64, time string) bool {
 	row := db.QueryRow(query, TgID)
 	var timeIs bool
 	if err := row.Scan(&timeIs); err != nil {
-		log.Println(err)
+		loger.LogToFile(err)
 	}
 	return timeIs
 }
@@ -233,13 +223,13 @@ func DeleteTime(TgID int64, time string) bool {
 	query := "UPDATE " + "users SET " + time + "  = 0 WHERE tgId = ?"
 	_, err := db.Exec(query, TgID)
 	if err != nil {
-		log.Println(err)
+		loger.LogToFile(err)
 		return false
 	}
 	num := NumTimes(TgID) - 1
 	_, err = db.Exec("UPDATE users SET timesChosen  = ? WHERE tgId = ?", num, TgID)
 	if err != nil {
-		log.Println(err)
+		loger.LogToFile(err)
 		return false
 	}
 	return true
@@ -251,15 +241,16 @@ func GetIdsByHour(hour int) []int64 {
 	var usersID []int64
 	queryTime := ""
 	if hour > 0 && hour < 24 {
-		queryTime = "time" + strconv.Itoa(hour) + " = ?"
+		queryTime = "time" + strconv.Itoa(hour)
 	} else {
 		queryTime = "time24"
 	}
 	query := "SELECT tgId " + "FROM users WHERE " + queryTime + " = ?"
-	tgIDData, _ := db.Query(query, true)
+	tgIDData, _ := db.Query(query, 1)
 	for tgIDData.Next() {
 		var tgID int64
 		if err := tgIDData.Scan(&tgID); err != nil {
+			loger.LogToFile(err)
 			return nil
 		}
 		usersID = append(usersID, tgID)

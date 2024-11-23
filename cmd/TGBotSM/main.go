@@ -4,10 +4,10 @@ import (
 	api "SMNotifyBot/internal/handleAPI"
 	"SMNotifyBot/internal/handleDB"
 	handleMSG "SMNotifyBot/internal/handleUpdate"
+	"SMNotifyBot/internal/loger"
 	"SMNotifyBot/internal/timeManage"
 	"bufio"
 	"context"
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"os"
@@ -19,7 +19,7 @@ func main() {
 		log.Println(err)
 	}
 	bot.Debug = false
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	loger.LogToFile("Authorized on account " + bot.Self.UserName)
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
@@ -41,12 +41,11 @@ func main() {
 			cancel()
 			return
 		}
-		fmt.Println("Введите '\n' для завершения работы.")
 	}
 
 	// Ожидаем завершения
 	<-done
-	fmt.Println("Программа завершена.")
+	loger.LogToFile("Работа завершена")
 }
 
 func receiveUpdates(updates tgbotapi.UpdatesChannel, ctx context.Context) {
@@ -54,7 +53,7 @@ func receiveUpdates(updates tgbotapi.UpdatesChannel, ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				fmt.Println("Получена команда на завершение. Остановка работы.")
+				loger.LogToFile("Получена команда на завершение. Остановка работы.")
 				return
 			default:
 				update := <-updates

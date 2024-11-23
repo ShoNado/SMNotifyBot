@@ -4,8 +4,9 @@ import (
 	"SMNotifyBot/internal/answerCreator"
 	api "SMNotifyBot/internal/handleAPI"
 	"SMNotifyBot/internal/handleDB"
+	"SMNotifyBot/internal/loger"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -26,7 +27,7 @@ func HandleButton(query *tgbotapi.CallbackQuery) {
 		if handleDB.NumOfMsgSaved(query.From.ID) > 0 {
 			answerCreator.UserSavedMsgs(query.From.ID, msg)
 			if _, err := bot.Request(callback); err != nil {
-				log.Println("Не удалось ответить на колбек кнопки", err)
+				loger.LogToFile("Ошибка: Не удалось ответить на callback кнопки" + fmt.Sprintln(err))
 			}
 			return
 		} else {
@@ -43,7 +44,7 @@ func HandleButton(query *tgbotapi.CallbackQuery) {
 		}
 		deleteMsg := tgbotapi.NewDeleteMessage(query.Message.Chat.ID, query.Message.MessageID)
 		if _, err := bot.Request(deleteMsg); err != nil {
-			log.Println(err)
+			loger.LogToFile(err)
 		}
 		if handleDB.DeleteMSG(query.From.ID, deleteId) {
 			callback = tgbotapi.NewCallback(query.ID, "Сообщение успешно удалено")
@@ -61,10 +62,10 @@ func HandleButton(query *tgbotapi.CallbackQuery) {
 				query.Message.MessageID,
 				keyboard)
 			if _, err := bot.Send(editMsg); err != nil {
-				log.Printf("Не удалось отредактровать сообщение")
+				loger.LogToFile("Не удалось отредактровать сообщение")
 			}
 			if _, err := bot.Request(callback); err != nil {
-				log.Println("не удалось ответить на колбек кнопки")
+				loger.LogToFile("не удалось ответить на колбек кнопки")
 			}
 			return
 		} else if handleDB.IsTimeTaken(query.From.ID, timeId) && handleDB.DeleteTime(query.From.ID, timeId) {
@@ -74,10 +75,10 @@ func HandleButton(query *tgbotapi.CallbackQuery) {
 				query.Message.MessageID,
 				keyboard)
 			if _, err := bot.Send(editMsg); err != nil {
-				log.Printf("Не удалось отредактровать сообщение")
+				loger.LogToFile("Не удалось отредактровать сообщение")
 			}
 			if _, err := bot.Request(callback); err != nil {
-				log.Println("не удалось ответить на колбек кнопки")
+				loger.LogToFile("не удалось ответить на колбек кнопки")
 			}
 			return
 		} else {
@@ -88,10 +89,10 @@ func HandleButton(query *tgbotapi.CallbackQuery) {
 		msg.Text = "где ты эту кнопку нашел??"
 	}
 	if _, err := bot.Request(callback); err != nil {
-		log.Println("Не удалось ответить на колбек кнопки", err)
+		loger.LogToFile("Не удалось ответить на колбек кнопки" + fmt.Sprintln(err))
 	}
 	if _, err := bot.Send(msg); err != nil {
-		log.Println("Не удалось ответить на кнопку", err)
+		loger.LogToFile("Не удалось ответить на кнопку" + fmt.Sprintln(err))
 	}
 
 }

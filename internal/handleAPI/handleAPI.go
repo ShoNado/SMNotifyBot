@@ -1,8 +1,9 @@
 package handleAPI
 
 import (
+	"SMNotifyBot/internal/loger"
 	"encoding/json"
-	"log"
+	"fmt"
 	"os"
 )
 
@@ -16,7 +17,7 @@ func GetApiToken() string { //read token from file
 	configuration := Config{}
 	err := decoder.Decode(&configuration)
 	if err != nil {
-		log.Panic("Не удалось подключиться к боту ", err)
+		loger.LogToFile("Не удалось подключиться к боту " + fmt.Sprintln(err))
 	}
 	return configuration.TelegramBotToken
 }

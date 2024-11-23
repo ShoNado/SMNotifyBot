@@ -4,39 +4,31 @@ import (
 	"SMNotifyBot/internal/answerCreator"
 	api "SMNotifyBot/internal/handleAPI"
 	"SMNotifyBot/internal/handleDB"
+	"SMNotifyBot/internal/loger"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
 var bot, _ = tgbotapi.NewBotAPI(api.GetApiToken())
 
 func WaitForTime() {
-	// Имя файла для записи логов
-	var LogFileName = "logs.txt"
-	// Создаем файл и проверяем наличие
-	file, err := os.OpenFile(LogFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Printf("Ошибка при открытии файла: %v\n", err)
-		return
-	}
-	defer file.Close()
+
 	for {
+		//проверка на то пора ли делать уведомление
 		time.Sleep(10 * time.Second)
-		if time.Now().Minute() == 0 {
+		if time.Now().Minute() == 40 {
 			callForNotification(time.Now().Hour())
 			time.Sleep(60 * time.Second)
 		}
+		//проверка на то не отвечает ли телеграмм на запросы
 		status := checkTelegramAPI()
-		currentTime := time.Now().Format("15:04:05 01-02-2006")
 		if status != http.StatusOK {
-			logEntry := fmt.Sprintf("%s, API Telegram не работает. Код ответа:, %d, ожидаю ответа сервера\n", currentTime, status)
-			if _, err := file.WriteString(logEntry); err != nil {
-				fmt.Printf("Ошибка при записи в файл: %vn", err)
-			}
+			logEntry := fmt.Sprintf(
+				"API Telegram не работает. Код ответа:, %d, ожидаю ответа сервера\n",
+				status)
+			loger.LogToFile(logEntry)
 		}
 
 	}
@@ -53,13 +45,13 @@ func callForNotification(hour int) {
 			bot.Send(msg)
 		}
 	}
-	log.Println("Уведомление о напоминания произведено успешно")
+	loger.LogToFile("Уведомление о напоминания произведено успешно")
 }
 
 func checkTelegramAPI() int {
 	resp, err := http.Get("https://api.telegram.org/bot" + api.GetApiToken() + "/getMe")
 	if err != nil {
-		fmt.Println("Ошибка при запросе к API: ", err)
+		loger.LogToFile("Ошибка при запросе к API: " + fmt.Sprintf("%s", err))
 		return 0
 	}
 	defer resp.Body.Close()
